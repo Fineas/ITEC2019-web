@@ -18,11 +18,13 @@
 
 	$data = "";
 
-	$split_data_pattern = "//";
+	$split_data_pattern = ";;;";
+
+	$admin_account = "mr_admin@admin.com";
 
 	if(isset($_GET['q'])) $query = $_GET['q'];
 
-	if(isset($_GET['d'])) $data = explode($split_data_pattern, $_GET['d']);
+	if(isset($_POST['d'])) $data = explode($split_data_pattern, $_POST['d']);
 
 
 
@@ -149,10 +151,11 @@
 		{
 			if(isset($qry['selling_buyer_type']))
 			{
-				$images_in_base64_array = explode(";", $product_images);
+				$images_in_base64_array = explode("#", $product_images);
 				$images_to_database_array = "";
-				for ($i=0; $i < sizeof($images_in_base64_array); $i++) { 
+				for ($i=0; $i < sizeof($images_in_base64_array) - 1; $i++) { 
 					$new_image_name = generateRandomString(30).".jpg";
+					$new_image_name = "/var/www/html/product_images/".$new_image_name;
 					base64ToImage($images_in_base64_array[$i],$new_image_name);
 					$images_to_database_array .= $new_image_name.";" ;
 				}
@@ -165,7 +168,8 @@
 					'product_price' => $product_price,
 					'product_images' => $images_to_database_array,
 					'product_description' => $product_description,
-					'product_target_market' => $qry['selling_buyer_type']
+					'product_target_market' => $qry['selling_buyer_type'],
+					'product_owner_address' => $qry['address']
 				]);
 			}
 
@@ -185,19 +189,191 @@
 			if(isset($qry['selling_buyer_type'])) echo "seller"."//".$qry['selling_buyer_type'];
 		}
 	}
-	if($query == "pNq6TQ5oERPqUgyiu8o4")//search query
+	if($query == "lJpJRukjAo83WZgfGIQd")//search query
 	{
-		$category = $data[0];
-		$product_target_market = $data[1];
-		$skip = $data[2];
-		$limit = $data[3];
-		if($product_target_market == "-1")
+		$auth_token = $data[0];
+		$category = $data[1];
+		$product_target_market = $data[2];
+		$skip = intval($data[3]);
+		$limit = intval($data[4]);
+		$cursor = "";
+		if($auth_token == "0")
 		{
-			//
+
+			$cursor = $products->find(
+		    [
+		        'product_category' => $category
+		    ],
+		    [
+		        'limit' => $limit,
+		        'skip' => $skip
+		    ]
+		);
+
+			foreach ($cursor as $key) {
+			$img_array = explode(";", $key['product_images']);
+			$final_product_image = $img_array[0];
+			echo $final_product_image.";;;".$key['product_title'].";;;".$key['product_description'].";;;".$key['_id'].";;;".$key['posted_by'].";;;".$key['product_owner_address']."###";
+		}
+
 		}
 		else
 		{
-			//
+			$qry = $accounts -> findOne([
+				'auth_token' => $auth_token
+			]);
+			//echo $qry['account_type'];
+			if(isset($qry['account_type'])) $product_target_market = $qry['account_type'];
+			$cursor = $products->find(
+		    [
+		        'product_category' => $category,
+		        'product_target_market' => $product_target_market,
+		    ],
+		    [
+		        'limit' => $limit,
+		        'skip' => $skip
+		    ]
+		);
+
+			foreach ($cursor as $key) {
+			$img_array = explode(";", $key['product_images']);
+			$final_product_image = $img_array[0];
+			echo $final_product_image.";;;".$key['product_title'].";;;".$key['product_description'].";;;".$key['_id'].";;;".$key['posted_by'].";;;".$key['product_owner_address']."###";
+		}
+
+		}
+
+	}
+
+	if($query == "aawgmyLYDFSvn2Hrvmry")//product details query
+	{
+		$product_id = $data[0];
+		$qry = $products -> findOne([
+			'_id' => new MongoDB\BSON\ObjectID( $product_id )
+		]);
+		if(isset($qry['_id']))
+		{
+			$qry2 = $accounts -> findOne([
+				'email' => $qry['posted_by']
+			]);
+			if(isset($qry2['_id']))
+			{
+				echo $qry['product_images'].";;;".$qry['product_title'].";;;".$qry['product_description'].";;;".$qry['_id'].";;;".$qry['posted_by'].";;;".$qry['product_owner_address'].";;;".$qry2['firstname'].";;;".$qry2['lastname'].";;;".$qry2['phone_number'].";;;".$qry['product_category'].";;;".$qry['product_quantity'].";;;".$qry['product_price'];
+			}
+		}
+	}
+	if($query == "3EDbmIXM7SAXp1WXCp61")//admin panel query for confirmation
+	{
+		$auth_token = $data[0];
+		$target_email = $data[1];
+		$qry = $accounts -> findOne([
+			'auth_token' => $auth_token
+		]);
+		if(isset($qry['_id']))
+		{
+			if($qry['email'] == $admin_account)
+			{
+				$accounts->updateOne(
+				    [ 'email' => $target_email ],
+				    [ '$set' => [ 'account_status' => "1" ]]
+				);
+
+				echo "1";
+			}
+		}
+	}
+	if($query == "8CFzbwNCkq0yRGWGcOTT")//admin panel query for decline
+	{
+		$auth_token = $data[0];
+		$target_email = $data[1];
+		$qry = $accounts -> findOne([
+			'auth_token' => $auth_token
+		]);
+		if(isset($qry['_id']))
+		{
+			if($qry['email'] == $admin_account)
+			{
+				$accounts->deleteOne(
+				    [ 'email' => $target_email ]
+				);
+
+				echo "1";
+			}
+		}
+	}
+	if($query == "j91bLA4Twe21JNI7o3PB")//checking if buyer or seller
+	{
+		$auth_token = $data[0];
+		$qry = $accounts -> findOne([
+			"auth_token" => $auth_token
+		]);
+		if(isset($qry['email']))
+		{
+			if($qry['email'] == $admin_account) echo "admin";
+			else
+			{
+				if($qry['account_status'] == "0") echo "not_confirmed";
+				else if(isset($qry['account_type'])) echo "buyer";
+				else if(isset($qry['selling_buyer_type'])) echo "seller";
+			}
+		}
+	}
+	if($query == "zHcLbjZQhN6fSKgD9cdb")//user details query
+	{
+		$auth_token = $data[0];
+		$qry = $accounts -> findOne([
+			'auth_token' => $auth_token
+		]);
+		if(isset($qry['_id']))
+		{
+			echo $qry['email'].";;;".$qry['firstname'].";;;".$qry['lastname'].";;;".$qry['phone_number'].";;;".$qry['address'];
+		}
+	}
+	if($query == "oXiVkq4F4ZcxTUZUia1O")//get products by user query
+	{
+		$auth_token = $data[0];
+		$qry = $accounts -> findOne([
+			'auth_token' => $auth_token
+		]);
+		if(isset($qry['email']))
+		{
+			$qry2 = $products -> find(
+			[
+		        'posted_by' => $qry['email']
+		    ]
+			);
+			foreach ($qry2 as $key) {
+				echo $key['product_title'].";;;".$key['product_description'].";;;".$key['product_category']."###";
+			}
+		}
+	}
+	if($query == "2IwYvIhjGVnNb35ch7VZ")//display unconfirmed accounts query
+	{
+		$auth_token = $data[0];
+		$skip = intval($data[1]);
+		$limit = intval($data[2]);
+		$qry = $accounts -> findOne([
+			'auth_token' => $auth_token
+		]);
+		if(isset($qry['email'])) 
+		{
+			if($qry['email'] == $admin_account)
+			{
+				$qry2 = $accounts -> find(
+			[
+		        'account_status' => "0"
+		    ],
+		    [
+		    	'skip' => $skip,
+		    	'limit' => $limit
+		    ]
+			);
+
+			foreach ($qry2 as $key) {
+				echo $key['firstname'].";;;".$key['lastname'].";;;".$key['email'].";;;".$key['phone_number'].";;;".$key['address']."###";
+			}
+
+			}
 		}
 	}
 

@@ -1,1 +1,1 @@
-extract vendor.zip in backend folder
+extract vendor.zip in the same folder with api_main.php

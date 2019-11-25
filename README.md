@@ -8,6 +8,8 @@ We managed to implement a nice and clean interface for the users and the functio
 
 ## Preview
 > Customer
+
 ![market](https://raw.githubusercontent.com/Fineas/ITEC2019-web/master/img/market.png)
 > Admin
+
 ![market](https://raw.githubusercontent.com/Fineas/ITEC2019-web/master/img/admin.png)

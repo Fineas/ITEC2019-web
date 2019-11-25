@@ -7,5 +7,7 @@ It's main purpose is to serve, all local, small business owners in selling their
 We managed to implement a nice and clean interface for the users and the functionality of posting / viewing / buying products, as well as a 3page interface for the admins in order to confirm / deline the authorisation for publishing products.
 
 ## Preview
+> Customer
 ![market](https://raw.githubusercontent.com/Fineas/ITEC2019-web/master/img/market.png)
+> Admin
 ![market](https://raw.githubusercontent.com/Fineas/ITEC2019-web/master/img/admin.png)
